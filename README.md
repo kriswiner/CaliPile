@@ -1,4 +1,7 @@
 # CaliPile
-Arduino sketch for Excelitas' CaliPile TPiS 1S 1385 Thermoipile I2C sensor
+Arduino sketch for Excelitas' CaliPile TPiS 1S 1385 Thermopile I2C sensor
 
-First commit, work in progress...
+Reading the EEPROM, verifying checksum as well as protocol register (ChipID), etc.
+Getting ambient and object temperatures, using interrupt to detect presence and motion.
+
+TBD, create a cpp library.
