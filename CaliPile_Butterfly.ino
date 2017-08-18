@@ -1,3 +1,17 @@
+/* 08/16/2017 Copyright Tlera Corporation
+ *  
+ *  Created by Kris Winer
+ *  
+ This sketch is to operate Excelitas' CaliPile TPiS1S1385/5029 IR Thermopile
+ https://media.digikey.com/pdf/Data%20Sheets/Excelitas%20PDFs/TPiS_1S_1385.pdf 
+ 
+ The sketch uses default SDA/SCL pins on 20/21 of the Butterfly development board.
+ The CaliPile breakout board has 4K7 pullus on SDA and SCL.
+
+ Library may be used freely and without limit with attribution.
+ 
+  */
+  
 #include <Wire.h>
 
 //https://www.pacer-usa.com/Assets/User/2077-CaliPile_TPiS_1S_1385_5029_27.04.2017.pdf
@@ -13,14 +27,13 @@
 #define CALIPILE_TPAMB_SHOCK        17
 #define CALIPILE_INTERRUPT_STATUS   18
 #define CALIPILE_CHIP_STATUS        19
-#define CALIPILE_SLP1               20
-#define CALIPILE_SLP2               20
+#define CALIPILE_SLP12              20
 #define CALIPILE_SLP3               21
 #define CALIPILE_TP_PRES_THLD       22
 #define CALIPILE_TP_MOT_THLD        23
 #define CALIPILE_TP_AMB_SHOCK_THLD  24
 #define CALIPILE_INT_MASK           25
-#define CALIPILE_MOTION             26
+#define CALIPILE_SRC_SELECT         26
 #define CALIPILE_TMR_INT            27
 #define CALIPILE_TPOT_THR           28
 
@@ -53,13 +66,25 @@
 #define TC_0_50s   0x0C
 #define TC_0_25s   0x0D
 
-#define intPin 9
-#define myLed 13
+#define src_TPOBJ_TPOBJLP2         0x00
+#define src_TPOBJLP1_TPOBJLP2      0x01
+#define src_TPOBJ_TPOBJLP2_FRZN    0x02
+#define src_TPOBJLP1_TPOBJLP2_FRZN 0x03
 
-uint8_t lookUp, TOBJ1, rawData[3] = {0, 0, 0}, intStatus;
-uint16_t PTAT25, M, U0, UOUT, UOUT1, CHECKSUM, TPAMB;
-uint32_t TPOBJ;
-float Tamb, Tobj;
+#define cycTime_30ms  0x00
+#define cycTime_60ms  0x01
+#define cycTime_120ms 0x02
+#define cycTime_140ms 0x03
+
+#define intPin 9
+#define myLed1 13
+#define myLed2 26
+#define myLed3 38
+
+uint8_t lookUp, TOBJ1, rawData[3] = {0, 0, 0}, intStatus, chipStatus;
+uint16_t PTAT25, M, U0, CHECKSUM, TPAMB;
+uint32_t TPOBJ, UOUT1;
+float Tamb, Tobj, k;
 
 bool newInt = false;
 
@@ -68,10 +93,14 @@ void setup() {
   Serial.begin(115200);
   delay(4000);
 
-  pinMode(intPin, INPUT);
+  pinMode(intPin, INPUT_PULLUP);
  
-  pinMode(myLed, INPUT);
-  digitalWrite(myLed, HIGH);
+  pinMode(myLed1, OUTPUT);
+  digitalWrite(myLed1, HIGH);
+  pinMode(myLed2, OUTPUT);
+  digitalWrite(myLed2, HIGH);
+  pinMode(myLed3, OUTPUT);
+  digitalWrite(myLed3, HIGH);
   
   Wire.begin(TWI_PINS_20_21); // set master mode 
   Wire.setClock(400000); // I2C frequency at 400 kHz  
@@ -108,14 +137,17 @@ void setup() {
 
   readBytes(CALIPILE_ADDRESS, CALIPILE_EEPROM_M, 2, &rawData[0]);
   M = ( (uint16_t) rawData[0] << 8) | rawData[1];
+  M /= 100;
   Serial.print("CaliPile M is "); Serial.println(M);
 
   readBytes(CALIPILE_ADDRESS, CALIPILE_EEPROM_U0, 2, &rawData[0]);
   U0 = ( (uint16_t) rawData[0] << 8) | rawData[1];
+  U0 += 32768;
   Serial.print("CaliPile U0 is "); Serial.println(U0);
 
   readBytes(CALIPILE_ADDRESS, CALIPILE_EEPROM_UOUT1, 2, &rawData[0]);
   UOUT1 = ( (uint16_t) rawData[0] << 8) | rawData[1];
+  UOUT1 *= 2;
   Serial.print("CaliPile UOUT1 is "); Serial.println(UOUT1);
 
   TOBJ1 = readByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_TOBJ1);
@@ -136,56 +168,91 @@ void setup() {
   writeByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_CONTROL, 0x00); // disable EEPROM read
   uint8_t lookUp = readByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_PROTOCOL);
 
- 
-  // Initialize the sensor
-  // only motion (bit 2) and presence (bit 3) interrupts allowed
-  writeByte(CALIPILE_ADDRESS, CALIPILE_INT_MASK, 0x0C); 
+ /*
+  // Initialize the sensor for presence detection
+  // only presence (bit 3) interrupts allowed
+  writeByte(CALIPILE_ADDRESS, CALIPILE_INT_MASK, 0x08); 
+  // time constant for LP2 (bits 4 - 7) and LP1 (bits 0 - 3)
+  writeByte(CALIPILE_ADDRESS, CALIPILE_SLP12, TC_8s << 4 | TC_1s);
+  // select LP1 - LP2 object source (bits 2 - 3) for presence detection
+  writeByte(CALIPILE_ADDRESS, CALIPILE_SRC_SELECT, src_TPOBJLP1_TPOBJLP2 << 2);
+  // select presence threshold
+  writeByte(CALIPILE_ADDRESS, CALIPILE_TP_PRES_THLD, 0x22); // set at 50 counts
+*/
+  // Initialize the sensor for motion detection
+  // only motion (bit 2) interrupts allowed
+  writeByte(CALIPILE_ADDRESS, CALIPILE_INT_MASK, 0x04); 
+  // time constant for LP1 (bits 0 - 3)
+  writeByte(CALIPILE_ADDRESS, CALIPILE_SLP12, TC_0_50s);
+  // select cycle time (bits 0 - 1) for motion detection
+  writeByte(CALIPILE_ADDRESS, CALIPILE_SRC_SELECT, cycTime_120ms);
+  // select motion threshold
+  writeByte(CALIPILE_ADDRESS, CALIPILE_TP_PRES_THLD, 0x0A); // set at 10 counts
 
+  // Construct needed calibration constants (just need to calculate once)
+  k = ( (float) (UOUT1 - U0) )/(powf((float)(TOBJ1 + 273.15f), 3.8f) - powf(25.0f + 273.15f, 3.8f) );
 
- attachInterrupt(intPin, myinthandler, FALLING);  // define interrupt for INT pin output of CaliPile
-/* end of setup */
+  attachInterrupt(intPin, myinthandler, FALLING);  // define interrupt for INT pin output of CaliPile
+
+  chipStatus = readByte(CALIPILE_ADDRESS, CALIPILE_CHIP_STATUS);
+  intStatus  = readByte(CALIPILE_ADDRESS, CALIPILE_INTERRUPT_STATUS);
+  Serial.print("Chip status = "); Serial.println(chipStatus, HEX);
+  Serial.print("Int status = "); Serial.println(intStatus, HEX);
+  
+  /* end of setup */
 }
 
 
 void loop() {
-  if(newInt)
-  {
+
+   if(newInt == true)
+   {
     newInt = false;
-    intStatus = readByte(CALIPILE_ADDRESS, CALIPILE_INTERRUPT_STATUS);
 
-
-    if(intStatus & 0x08) 
+    chipStatus = readByte(CALIPILE_ADDRESS, CALIPILE_CHIP_STATUS);
+    intStatus  = readByte(CALIPILE_ADDRESS, CALIPILE_INTERRUPT_STATUS);
+    Serial.print("Chip status = "); Serial.println(chipStatus, HEX);
+ 
+    if(chipStatus & 0x08)
     {
       Serial.println("Presence detected!");
+      digitalWrite(myLed1, LOW); delay(50); digitalWrite(myLed1, HIGH);  
+      if(chipStatus & 0x80) Serial.println("Presence positive!");
+      else Serial.println("Presence negative!");
     }
 
-    if(intStatus & 0x04) 
+    if(chipStatus & 0x04) 
     {
       Serial.println("Motion detected!");
+      if(chipStatus & 0x40) {
+        Serial.println("Motion positive!");
+        digitalWrite(myLed2, LOW); delay(50); digitalWrite(myLed2, HIGH);
+      }
+      else {
+        Serial.println("Motion negative!");
+        digitalWrite(myLed3, LOW); delay(50); digitalWrite(myLed3, HIGH);
+      }
+    }
+
     }
     
-  }
-
   // read the ambient temperature
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPAMBIENT, 2, &rawData[0]);
   TPAMB = ( (uint16_t)(rawData[0] & 0x7F) << 8) | rawData[1] ; 
 
-  Tamb = (25.0f + 273.15f) + ((float)TPAMB - (float)PTAT25) * (1.0f/(float) M);
+  Tamb = 298.15f + ((float)TPAMB - (float)PTAT25) * (1.0f/(float) M);
   Serial.print("Tambient = "); Serial.print(Tamb, 2); Serial.println(" K");
 
   // read the object temperature
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPOBJECT, 3, &rawData[0]);
   TPOBJ = ( (uint32_t) ( (uint32_t)rawData[0] << 24) | ( (uint32_t)rawData[1] << 16) | (rawData[2] & 0x80) << 8) >> 15; 
   
-  float k = ( (float)UOUT1 - (float)U0)/(powf((float)TOBJ1, 3.8f) - powf(298.15f, 3.8f) );
-  Serial.print("k = "); Serial.println(k, 10);
   float temp0 = powf(Tamb, 3.8f);
-  float temp1 = ( (float)(TPOBJ - U0)/k );
-  float temp2 = ( temp1 + temp0 );
-  Tobj = powf( (float) temp2, 0.2631578947f );
+  float temp1 = ( (float)(TPOBJ - U0) / k );
+  Tobj = powf( (temp0 + temp1), 0.2631578947f );
   Serial.print(" Tobject = "); Serial.print(Tobj, 2); Serial.println(" K");
   
-  digitalWrite(myLed, 0); delay(1000); digitalWrite(myLed, 1);
+  digitalWrite(myLed1, LOW); delay(10); digitalWrite(myLed1, HIGH);  delay(900);
   
   /* end of main loop */
 }
