@@ -248,7 +248,7 @@ void loop() {
   TPOBJ = ( (uint32_t) ( (uint32_t)rawData[0] << 24) | ( (uint32_t)rawData[1] << 16) | (rawData[2] & 0x80) << 8) >> 15; 
   
   float temp0 = powf(Tamb, 3.8f);
-  float temp1 = ( (float)(TPOBJ - U0) / k );
+  float temp1 = ( ((float) TPOBJ) - ((float) U0)  ) / k ;
   Tobj = powf( (temp0 + temp1), 0.2631578947f );
   Serial.print(" Tobject = "); Serial.print(Tobj, 2); Serial.println(" K");
   
