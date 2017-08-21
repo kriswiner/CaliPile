@@ -106,7 +106,7 @@ void setup() {
   pinMode(intPin, INPUT);
  
   pinMode(myLed1, OUTPUT);
-  digitalWrite(myLed1, HIGH);
+  digitalWrite(myLed1, HIGH);  // Start with leds off, active LOW on Butterfly
   pinMode(myLed2, OUTPUT);
   digitalWrite(myLed2, HIGH);
   pinMode(myLed3, OUTPUT);
