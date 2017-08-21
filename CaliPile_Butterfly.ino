@@ -176,7 +176,6 @@ void setup() {
   Serial.print("CaliPile CHECKSUM is "); Serial.println(sum + c);
 
   writeByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_CONTROL, 0x00); // disable EEPROM read
-  uint8_t lookUp = readByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_PROTOCOL);
 
   // Initialize the sensor for motion and presence detection
   // Tthr (bit 4), presence (bit(3), motion (bit 2), amb shock (bit 1), timer (bit 0) interrupts allowed
