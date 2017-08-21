@@ -124,7 +124,9 @@ void setup() {
 
   I2Cscan();
 
-  // Check EEPROM protocol number as a test of I2C communication
+ 
+ /* Start of EEPROM operations, just have to do once *************************************************** */
+ // Check EEPROM protocol number as a test of I2C communication 
   writeByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_CONTROL, 0x80); // enable EEPROM read
    
   uint8_t c = readByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_PROTOCOL);
@@ -176,7 +178,9 @@ void setup() {
   Serial.print("CaliPile CHECKSUM is "); Serial.println(sum + c);
 
   writeByte(CALIPILE_ADDRESS, CALIPILE_EEPROM_CONTROL, 0x00); // disable EEPROM read
+  /* End of EEPROM operations, just have to do once *************************************************** */
 
+ 
   // Initialize the sensor for motion and presence detection
   // Tthr (bit 4), presence (bit(3), motion (bit 2), amb shock (bit 1), timer (bit 0) interrupts allowed
   writeByte(CALIPILE_ADDRESS, CALIPILE_INT_MASK, 0x1C); 
@@ -197,7 +201,6 @@ void setup() {
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPOT_THR, 2, &rawData[0]);
   uint16_t TPOTTHR = ((uint16_t) rawData[0] << 8) | rawData[1];
   Serial.print("Overtemp threshold = "); Serial.println(TPOTTHR * 2);
-  
 
   // Construct needed calibration constants (just need to calculate once)
   k = ( (float) (UOUT1 - U0) )/(powf((float)(TOBJ1 + 273.15f), 3.8f) - powf(25.0f + 273.15f, 3.8f) );
