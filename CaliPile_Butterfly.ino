@@ -389,7 +389,7 @@ void I2Cscan()
 }
 
 
-// I2C read/write functions for the BMP280 sensors
+// I2C read/write functions for the CaliPile sensor
 
   void writeByte(uint8_t address, uint8_t subAddress, uint8_t data)
 {
