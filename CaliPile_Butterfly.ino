@@ -103,7 +103,7 @@ void setup() {
   Serial.begin(115200);
   delay(4000);
 
-  pinMode(intPin, INPUT_PULLUP);
+  pinMode(intPin, INPUT);
  
   pinMode(myLed1, OUTPUT);
   digitalWrite(myLed1, HIGH);
