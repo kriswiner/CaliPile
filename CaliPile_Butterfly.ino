@@ -66,16 +66,19 @@
 #define TC_0_50s   0x0C
 #define TC_0_25s   0x0D
 
+// Sources
 #define src_TPOBJ_TPOBJLP2         0x00
 #define src_TPOBJLP1_TPOBJLP2      0x01
 #define src_TPOBJ_TPOBJLP2_FRZN    0x02
 #define src_TPOBJLP1_TPOBJLP2_FRZN 0x03
 
+// Cycle times
 #define cycTime_30ms  0x00
 #define cycTime_60ms  0x01
 #define cycTime_120ms 0x02
 #define cycTime_140ms 0x03
 
+// Define pins
 #define intPin 9
 #define myLed1 13  // red led
 #define myLed2 26  // green led
@@ -96,7 +99,7 @@ float Tamb, Tamblp3, Tobj, Tobjlp1, Tobjlp2, Tobjlp2frzn, Tpres, Tmot, Tambshk, 
 bool newInt = false;
 
 void setup() {
-  // put your setup code here, to run once:
+ 
   Serial.begin(115200);
   delay(4000);
 
