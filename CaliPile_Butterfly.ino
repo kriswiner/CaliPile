@@ -272,7 +272,7 @@ void loop() {
   
   // 20-bit wide, divide by 8 to compare with TPOBJ
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPOBJLP2, 3, &rawData[0]);
-  TPOBJLP2 = ( ((uint32_t) rawData[0] << 16) | ((uint32_t) rawData[1] << 8) | (rawData[2] & 0xF0) ) >> 4;
+  TPOBJLP2 = ((uint32_t) (rawData[0] & 0x0F) << 16) | ((uint32_t) rawData[1] << 8) | rawData[2] ;
   TPOBJLP2 /= 8;
   
   // 16-bit wide, divide by 2 to compare with TPAMB
