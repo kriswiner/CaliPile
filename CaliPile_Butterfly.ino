@@ -189,8 +189,9 @@ void setup() {
   // select cycle time (bits 0 - 1) for motion detection, source (bits) 2 - 3) for presence detection
   temp = readByte(CALIPILE_ADDRESS, CALIPILE_SRC_SELECT);
   writeByte(CALIPILE_ADDRESS, CALIPILE_SRC_SELECT, temp | src_TPOBJLP1_TPOBJLP2 << 2 | cycTime_30ms);  
-  // select motion threshold
+  // select presence and motion thresholds
   writeByte(CALIPILE_ADDRESS, CALIPILE_TP_PRES_THLD, 0x22); // set at 50 counts
+  writeByte(CALIPILE_ADDRESS, CALIPILE_TP_MOT_THLD, 0x0A); // set at 10 counts
 
   // specify the over temperature interrupt threshold (2 bytes)
   writeByte(CALIPILE_ADDRESS, CALIPILE_TPOT_THR, 0x83); // choose 67,072 counts as threshold
@@ -227,7 +228,7 @@ void loop() {
     if(intStatus & 0x08)
     {
       Serial.println("Presence detected!");
-      digitalWrite(myLed2, LOW); delay(50); digitalWrite(myLed2, HIGH);  // flash green led
+      digitalWrite(myLed2, LOW); delay(10); digitalWrite(myLed2, HIGH);  // flash green led
       if(intStatus & 0x80) presSign = true;
       else presSign = false;
     }
@@ -235,7 +236,7 @@ void loop() {
     if(intStatus & 0x04) 
     {
       Serial.println("Motion detected!");
-      digitalWrite(myLed3, LOW); delay(50); digitalWrite(myLed3, HIGH); // flash blue led
+      digitalWrite(myLed3, LOW); delay(10); digitalWrite(myLed3, HIGH); // flash blue led
       if(intStatus & 0x40) motSign = true;
       else motSign = false;
       }
@@ -324,7 +325,8 @@ void loop() {
     Serial.print("TAMBSHK = ");    Serial.println(TPAMBSHK);  
     Serial.println(" ");
   }
-
+ 
+// Output for serial plotter
 //  Serial.print((Tamb - 273.15));  Serial.print("  "); Serial.print((Tobj - 273.15)); Serial.println("  ");
 
    Serial.print((TPAMB)); Serial.print("  "); Serial.print((TPAMBLP3)); Serial.println("  ");
