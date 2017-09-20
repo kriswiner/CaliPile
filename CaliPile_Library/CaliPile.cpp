@@ -130,7 +130,7 @@
   uint32_t CALIPILE::getTPOBJ(){
   uint8_t rawData[3] = {0, 0, 0};
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPOBJECT, 3, &rawData[0]);
-  uint32_t temp = ( (uint32_t) ( (uint32_t)rawData[0] << 24) | ( (uint32_t)rawData[1] << 16) | (rawData[2] & 0x80) << 8) >> 15; 
+  uint32_t temp = ( (uint32_t) ( (uint32_t)rawData[0] << 24) | ( (uint32_t)rawData[1] << 16) | ( (uint32_t)rawData[2] & 0x80) << 8) >> 15; 
   return temp;
   }
 
@@ -138,7 +138,7 @@
   uint32_t CALIPILE::getTPOBJLP1(){
   uint8_t rawData[3] = {0, 0, 0};
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPOBJLP1, 3, &rawData[0]);
-  uint32_t temp = ( ((uint32_t) rawData[0] << 16) | ((uint32_t) rawData[1] << 8) | (rawData[2] & 0xF0) ) >> 4;
+  uint32_t temp = ( ((uint32_t) rawData[0] << 16) | ((uint32_t) rawData[1] << 8) | ( (uint32_t)rawData[2] & 0xF0) ) >> 4;
   temp /= 8;
   return temp;
   }
