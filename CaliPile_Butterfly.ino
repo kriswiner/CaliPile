@@ -258,7 +258,7 @@ void loop() {
 
   // read the object temperature
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPOBJECT, 3, &rawData[0]);
-  TPOBJ = ( (uint32_t) ( (uint32_t)rawData[0] << 24) | ( (uint32_t)rawData[1] << 16) | (rawData[2] & 0x80) << 8) >> 15; 
+  TPOBJ = ( (uint32_t) ( (uint32_t)rawData[0] << 24) | ( (uint32_t)rawData[1] << 16) | ( (uint32_t)rawData[2] & 0x80) << 8) >> 15; 
   
   float temp0 = powf(Tamb, 3.8f);
   float temp1 = ( ((float) TPOBJ) - ((float) U0)  ) / k ;
@@ -268,7 +268,7 @@ void loop() {
 
   // 20-bit wide, divide by 8 to compare with TPOBJ
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPOBJLP1, 3, &rawData[0]);
-  TPOBJLP1 = ( ((uint32_t) rawData[0] << 16) | ((uint32_t) rawData[1] << 8) | (rawData[2] & 0xF0) ) >> 4;
+  TPOBJLP1 = ( ((uint32_t) rawData[0] << 16) | ((uint32_t) rawData[1] << 8) | ( (uint32_t)rawData[2] & 0xF0) ) >> 4;
   TPOBJLP1 /= 8;
   
   // 20-bit wide, divide by 8 to compare with TPOBJ
