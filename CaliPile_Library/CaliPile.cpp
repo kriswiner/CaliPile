@@ -155,7 +155,7 @@
   uint16_t CALIPILE::getTPAMBLP3(){
   uint8_t rawData[2] = {0, 0};
   readBytes(CALIPILE_ADDRESS, CALIPILE_TPAMBLP3, 2, &rawData[0]);
-  uint8_t temp = ((uint16_t) rawData[0] << 8) | rawData[1];
+  uint16_t temp = ((uint16_t) rawData[0] << 8) | rawData[1];
   temp /= 2;
   return temp;
   }
